@@ -10,10 +10,12 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/context/auth-context';
 import { Camera, Plus, X, Save, Star } from 'lucide-react';
+import { useUser } from '@clerk/nextjs';
 
 export default function ProfilePage() {
-  const { user } = useAuth();
-  const [name, setName] = useState(user?.name || '');
+  const { user } = useUser();
+  const fullName = user?.firstName + ' ' + user?.lastName
+  const [name, setName] = useState(fullName || '');
   const [bio, setBio] = useState('Passionate content creator with 5+ years of experience in video production and storytelling.');
   const [rate, setRate] = useState('25000');
   const [specialties, setSpecialties] = useState(['Video Production', 'Animation', 'Brand Stories']);
@@ -58,9 +60,9 @@ export default function ProfilePage() {
               {/* Avatar Upload */}
               <div className="flex items-center space-x-6">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage src={user?.avatar} />
+                  <AvatarImage src={user?.imageUrl} />
                   <AvatarFallback className="text-xl">
-                    {user?.name?.split(' ').map(n => n[0]).join('')}
+                    {fullName?.split(' ').map(n => n[0]).join('')}
                   </AvatarFallback>
                 </Avatar>
                 <div>
@@ -81,6 +83,7 @@ export default function ProfilePage() {
                     id="name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
+                    disabled
                   />
                 </div>
                 <div className="space-y-2">

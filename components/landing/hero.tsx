@@ -4,13 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { ArrowRight, Code, Building2, Users, TrendingUp, Shield, Zap } from 'lucide-react';
-
+import { ArrowRight, Code, Building2, Users, TrendingUp, Shield, Zap, Router } from 'lucide-react';
+import { useAuth } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 interface HeroProps {
   onRoleSelect: (role: 'developer' | 'business' | 'creator') => void;
 }
 
 export default function Hero({ onRoleSelect }: HeroProps) {
+  const { isSignedIn } = useAuth();
+  const router = useRouter();
   const features = [
     { icon: TrendingUp, text: 'Higher Revenue' },
     { icon: Shield, text: 'Secure Payments' },
@@ -62,9 +65,16 @@ export default function Hero({ onRoleSelect }: HeroProps) {
             <Button variant="ghost">About</Button>
             <Button variant="ghost">Contact</Button>
             <ThemeToggle />
-            <Button variant="outline" onClick={() => onRoleSelect('developer')}>
+
+            {isSignedIn ? (
+               <Button onClick={() => router.push('/dashboard') } >
+              Dashboard
+            </Button>
+            ): (
+               <Button variant="outline" onClick={() => onRoleSelect('developer')}>
               Sign In
             </Button>
+            )}
           </div>
         </div>
       </nav>

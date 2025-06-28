@@ -91,11 +91,11 @@ export default function Sidebar() {
             <div className="flex items-center space-x-3">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={user.avatar} />
-                <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
+                <AvatarFallback>{user.firstName.charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground truncate">
-                  {user.name}
+                  {user.firstName} { user.lastName}
                 </p>
                 <p className="text-xs text-muted-foreground capitalize">
                   {user.role}

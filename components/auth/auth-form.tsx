@@ -21,7 +21,8 @@ export default function AuthForm({ initialRole, mode = 'signin' }: AuthFormProps
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [role, setRole] = useState<UserRole>(initialRole || 'developer');
   const [isLoading, setIsLoading] = useState(false);
   const [currentMode, setCurrentMode] = useState(mode);
@@ -38,11 +39,10 @@ export default function AuthForm({ initialRole, mode = 'signin' }: AuthFormProps
           alert('Passwords do not match');
           return;
         }
-        await signup(email, password, name, role);
+        await signup(email, password, firstName, lastName, role);
       } else {
-        await login(email, password, role);
+        await login(email, password);
       }
-      router.push('/dashboard');
     } catch (error) {
       console.error('Authentication failed:', error);
     } finally {
@@ -100,18 +100,32 @@ export default function AuthForm({ initialRole, mode = 'signin' }: AuthFormProps
           <CardContent className="space-y-6">
             <form onSubmit={handleSubmit} className="space-y-4">
               {currentMode === 'signup' && (
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="Enter your full name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    className="h-11"
-                  />
-                </div>
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName">First Name</Label>
+                    <Input
+                      id="firstName"
+                      type="text"
+                      placeholder="Enter your first name"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      required
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName">Last Name</Label>
+                    <Input
+                      id="lastName"
+                      type="text"
+                      placeholder="Enter your last name"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      required
+                      className="h-11"
+                    />
+                  </div>
+                </>
               )}
 
               <div className="space-y-2">
@@ -136,6 +150,7 @@ export default function AuthForm({ initialRole, mode = 'signin' }: AuthFormProps
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
+                  minLength={8}
                   className="h-11"
                 />
               </div>
@@ -150,34 +165,37 @@ export default function AuthForm({ initialRole, mode = 'signin' }: AuthFormProps
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
+                    minLength={8}
                     className="h-11"
                   />
                 </div>
               )}
               
-              <div className="space-y-2">
-                <Label htmlFor="role">I am a</Label>
-                <Select value={role} onValueChange={(value: UserRole) => setRole(value)}>
-                  <SelectTrigger className="h-11">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(roleIcons).map(([roleKey, Icon]) => (
-                      <SelectItem key={roleKey} value={roleKey}>
-                        <div className="flex items-center space-x-3">
-                          <Icon className="w-4 h-4" />
-                          <div>
-                            <div className="font-medium capitalize">{roleKey}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {roleDescriptions[roleKey as UserRole]}
+              {currentMode === 'signup' && (
+                <div className="space-y-2">
+                  <Label htmlFor="role">I am a</Label>
+                  <Select value={role} onValueChange={(value: UserRole) => setRole(value)}>
+                    <SelectTrigger className="h-11">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(roleIcons).map(([roleKey, Icon]) => (
+                        <SelectItem key={roleKey} value={roleKey}>
+                          <div className="flex items-center space-x-3">
+                            <Icon className="w-4 h-4" />
+                            <div>
+                              <div className="font-medium capitalize">{roleKey}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {roleDescriptions[roleKey as UserRole]}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               
               <Button 
                 type="submit" 

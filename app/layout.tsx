@@ -3,6 +3,8 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
+import { ClerkProvider } from '@clerk/nextjs'
+import { OtpModal } from '@/components/auth/otpModal';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -17,7 +19,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <ClerkProvider>
+    <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider
          attribute="class"
@@ -27,9 +30,11 @@ export default function RootLayout({
         >
         <AuthProvider>
           {children}
+          <OtpModal />
         </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
+    </ClerkProvider>
   );
 }

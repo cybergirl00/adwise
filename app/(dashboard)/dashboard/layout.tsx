@@ -1,9 +1,9 @@
 'use client';
-
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import Sidebar from '@/components/dashboard/sidebar';
+import { useClerk } from '@clerk/nextjs';
 
 export default function DashboardLayout({
   children,
@@ -11,10 +11,11 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, isLoading } = useAuth();
+  const { isSignedIn, } = useClerk();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!isLoading && !isSignedIn) {
       router.push('/auth');
     }
   }, [user, isLoading, router]);

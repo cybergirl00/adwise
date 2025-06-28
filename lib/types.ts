@@ -3,9 +3,11 @@ export type UserRole = 'developer' | 'business' | 'creator';
 export interface User {
   id: string;
   email: string;
-  name: string;
   role: UserRole;
   avatar?: string;
+  firstName: string,
+  lastName: string;
+  userType: number
 }
 
 export interface Creator {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,45 +8,40 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Wallet, Plus, ArrowUpRight, ArrowDownLeft, CreditCard, Building, Calendar } from 'lucide-react';
-
-const transactions = [
-  {
-    id: '1',
-    type: 'credit',
-    amount: 25000,
-    description: 'Payment to Adebayo Williams - Video Production',
-    date: '2024-01-20',
-    status: 'completed'
-  },
-  {
-    id: '2',
-    type: 'debit',
-    amount: 50000,
-    description: 'Campaign funding - Summer Collection',
-    date: '2024-01-18',
-    status: 'completed'
-  },
-  {
-    id: '3',
-    type: 'credit',
-    amount: 18000,
-    description: 'Payment to Kemi Oladele - Graphic Design',
-    date: '2024-01-15',
-    status: 'completed'
-  },
-  {
-    id: '4',
-    type: 'debit',
-    amount: 75000,
-    description: 'Wallet funding via Bank Transfer',
-    date: '2024-01-10',
-    status: 'completed'
-  }
-];
+import { Dialog,DialogContent,DialogDescription,DialogHeader, DialogTitle, DialogTrigger,} from "@/components/ui/dialog"
+import { useFlutterwave, closePaymentModal } from 'flutterwave-react-v3';
+import { useUser } from '@clerk/nextjs';
+import { fundWallet, getUserTransactions } from '@/actions/wallet.actions';
+// import { toast} from '@/components/ui/sonner'
 
 export default function WalletPage() {
   const [fundAmount, setFundAmount] = useState('');
   const [showFundForm, setShowFundForm] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [transactions, setTransactions] = useState<TransactionProps[]>([])
+
+  const { user } = useUser();
+
+
+  const config = {
+    public_key: process.env.NEXT_PUBLIC_FLUTTERWAVE_PUBLIC_KEY,
+    tx_ref: Date.now(),
+    amount: fundAmount,
+    currency: 'NGN',
+    payment_options: 'card,mobilemoney,ussd',
+    customer: {
+      email: user?.emailAddresses[0].emailAddress,
+      //  phone_number: '070********',
+      name: user?.firstName + " " + user?.lastName,
+    },
+    // customizations: {
+    //   title: 'my Payment Title',
+    //   description: 'Payment for items in cart',
+    //   logo: 'https://st2.depositphotos.com/4403291/7418/v/450/depositphotos_74189661-stock-illustration-online-shop-log.jpg',
+    // },
+  };
+
+  const handleFlutterPayment = useFlutterwave(config);
 
   const balance = 125000;
   const pendingPayments = 43000;
@@ -54,10 +49,48 @@ export default function WalletPage() {
   const handleFundWallet = () => {
     if (fundAmount) {
       // Handle wallet funding logic
-      setFundAmount('');
+
+      handleFlutterPayment({
+            callback: async  (response) => {
+
+              const res = await fundWallet({
+                clerkId: user?.id ?? "",
+                amount: Number(fundAmount)
+              });
+
+              if(res?.status === 200) {
+                  setFundAmount('');
       setShowFundForm(false);
+               console.log(response);
+              }else {
+                console.error(`Error Occured while funding wallet`)
+              }
+                closePaymentModal() 
+            },
+            onClose: () => {},
+          });
+      
     }
   };
+
+  useEffect(() => {
+   const AllTransactions = async () => {
+    setIsLoading(true);
+
+    try {
+      const data = await getUserTransactions({
+        clerkId: user?.id ?? ""
+      }); 
+      setTransactions(data?.data.transactions)
+    } catch (error) {
+      setIsLoading(false)
+      console.log(error)
+    }
+   }
+
+   AllTransactions();
+  }, [])
+  
 
   return (
     <div className="space-y-8">
@@ -115,6 +148,7 @@ export default function WalletPage() {
 
       {/* Quick Actions */}
       <div className="flex gap-4">
+        
         <Button
           onClick={() => setShowFundForm(!showFundForm)}
         >
@@ -152,7 +186,10 @@ export default function WalletPage() {
                     <CreditCard className="h-4 w-4 mr-2" />
                     Card
                   </Button>
-                  <Button variant="outline" className="justify-start">
+                  
+                  <Button variant="outline" className="justify-start" 
+                  
+                  >
                     <Building className="h-4 w-4 mr-2" />
                     Bank
                   </Button>
@@ -182,48 +219,48 @@ export default function WalletPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {transactions.map((transaction, index) => (
+            {transactions && transactions.map((transaction, index) => (
               <div key={transaction.id}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div className={`p-2 rounded-lg ${
-                      transaction.type === 'credit'
+                      transaction.type === 1
                         ? 'bg-green-100 dark:bg-green-900/50'
                         : 'bg-red-100 dark:bg-red-900/50'
                     }`}>
-                      {transaction.type === 'credit' ? (
+                      {transaction.type === 1 ? (
                         <ArrowDownLeft className={`h-5 w-5 ${
-                          transaction.type === 'credit'
+                          transaction.type === 1
                             ? 'text-green-600 dark:text-green-400'
                             : 'text-red-600 dark:text-red-400'
                         }`} />
                       ) : (
                         <ArrowUpRight className={`h-5 w-5 ${
-                          transaction.type === 'credit'
+                          transaction.type === 1
                             ? 'text-green-600 dark:text-green-400'
                             : 'text-red-600 dark:text-red-400'
                         }`} />
                       )}
                     </div>
                     <div>
-                      <p className="font-medium">{transaction.description}</p>
-                      <p className="text-sm text-muted-foreground">{new Date(transaction.date).toLocaleDateString()}</p>
+                      <p className="font-medium">{transaction.desc}</p>
+                      <p className="text-sm text-muted-foreground">{new Date(transaction.createdAt).toLocaleDateString()}</p>
                     </div>
                   </div>
                   
                   <div className="text-right">
                     <p className={`font-bold ${
-                      transaction.type === 'credit'
+                      transaction.type === 1
                         ? 'text-green-600 dark:text-green-400'
                         : 'text-red-600 dark:text-red-400'
                     }`}>
-                      {transaction.type === 'credit' ? '+' : '-'}₦{transaction.amount.toLocaleString()}
+                      {transaction.type === 1 ? '+' : '-'}₦{transaction.amount.toLocaleString()}
                     </p>
                     <Badge
                       variant="secondary"
                       className="bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-400"
                     >
-                      {transaction.status}
+                      {transaction.status === 1 ? 'completed' : 'failed'}
                     </Badge>
                   </div>
                 </div>

@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { z } from "zod"
+
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +13,20 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Upload, FileVideo, Image as ImageIcon, Sparkles, Calendar, Target } from 'lucide-react';
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { getMedia } from "@/actions/ad.actions";
+import { useUser } from "@clerk/nextjs";
+import { createCampaign } from "@/actions/campaign.actions";
 
 const adFormats = [
   { id: 'banner', name: 'Banner Ad', description: '320x50 display banner' },
@@ -27,9 +43,12 @@ const targetAudiences = [
   'Students',
   'Professionals',
   'Parents',
-  'Tech Enthusiasts'
+  'Tech Enthusiasts',
+  'Others'
 ];
-
+const formSchema = z.object({
+  username: z.string().min(2).max(50),
+})
 export default function UploadAdsPage() {
   const [adTitle, setAdTitle] = useState('');
   const [adDescription, setAdDescription] = useState('');
@@ -39,28 +58,68 @@ export default function UploadAdsPage() {
   const [useAI, setUseAI] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+   const [medias, setMedias] = useState<MediaProps[]>([]);
+   const [mediaId, setMediaId] = useState('')
+
+   const { user } = useUser();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsUploading(true);
-    
-    // Simulate upload progress
-    for (let i = 0; i <= 100; i += 10) {
-      setUploadProgress(i);
-      await new Promise(resolve => setTimeout(resolve, 200));
-    }
-    
-    setIsUploading(false);
-    setUploadProgress(0);
-    
-    // Reset form
+
+    try {
+      const create = await createCampaign({
+        title: adTitle,
+        description: adDescription,
+        format: adFormat,
+        clerkId: user?.id ?? "",
+        mediaId: mediaId,
+        budget: Number(budget),
+        audience: targetAudience
+      });
+
+      if(create?.status === 201) {
+         setIsUploading(false);
+           setUploadProgress(0);
+        // Reset form
     setAdTitle('');
     setAdDescription('');
     setAdFormat('');
     setTargetAudience('');
     setBudget('');
     setUseAI(false);
+      }
+    } catch (error) {
+      console.log(error);
+       setIsUploading(false);
+           setUploadProgress(0);
+    } finally {
+       setIsUploading(false);
+           setUploadProgress(0);
+    }
+    
   };
+
+   useEffect(() => {
+  
+      const handlegetMedia = async () => {
+        try {
+          const data = await getMedia({
+            ownerId: user?.id ?? ""
+          });
+
+          // console.log(data?.data.data)
+  
+          setMedias(data?.data.data)
+  
+  
+        } catch (error) {
+          console.log(error)
+        }
+      }
+  
+      handlegetMedia();
+    }, [])
 
   return (
     <div className="space-y-8">
@@ -106,7 +165,7 @@ export default function UploadAdsPage() {
                   <div className="space-y-2">
                     <Label>Ad Format</Label>
                     <Select value={adFormat} onValueChange={setAdFormat} required>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select format" />
                       </SelectTrigger>
                       <SelectContent>
@@ -125,7 +184,7 @@ export default function UploadAdsPage() {
                   <div className="space-y-2">
                     <Label>Target Audience</Label>
                     <Select value={targetAudience} onValueChange={setTargetAudience} required>
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select audience" />
                       </SelectTrigger>
                       <SelectContent>
@@ -151,68 +210,26 @@ export default function UploadAdsPage() {
                   />
                 </div>
 
-                {/* AI Video Option */}
-                <div className="border rounded-lg p-4 bg-gradient-to-r from-primary/5 to-primary/10">
-                  <div className="flex items-center space-x-3">
-                    <Checkbox
-                      id="ai-video"
-                      checked={useAI}
-                      onCheckedChange={setUseAI}
-                    />
-                    <div className="flex-1">
-                      <label htmlFor="ai-video" className="text-sm font-medium cursor-pointer flex items-center gap-2">
-                        <Sparkles className="h-4 w-4 text-primary" />
-                        Use AI to create my video (+₦2,000)
-                      </label>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Let our AI create a professional video advertisement based on your content
-                      </p>
-                    </div>
+                 <div className="space-y-2">
+                    <Label>Media</Label>
+                    <Select value={mediaId} onValueChange={setMediaId} required>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select campaign media" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {medias && medias.map((media) => (
+                          <SelectItem key={media._id} value={media.title}>
+                            <div>
+                              <div className="font-medium">{media.title}</div>
+                              <div className="text-xs text-muted-foreground">{media.description}</div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  
-                  {useAI && (
-                    <div className="mt-4 p-3 bg-primary/5 rounded-lg border border-primary/20">
-                      <div className="flex items-center gap-2 text-sm text-primary">
-                        <Sparkles className="h-4 w-4" />
-                        <span className="font-medium">AI Video Features:</span>
-                      </div>
-                      <ul className="text-xs text-muted-foreground mt-2 space-y-1">
-                        <li>• Professional voiceover in Nigerian English</li>
-                        <li>• Custom animations and transitions</li>
-                        <li>• Brand-appropriate music and sound effects</li>
-                        <li>• Optimized for social media platforms</li>
-                      </ul>
-                    </div>
-                  )}
-                </div>
 
-                {/* File Upload */}
-                <div className="space-y-2">
-                  <Label>Upload Creative Assets</Label>
-                  <div className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary/50 transition-colors border-muted-foreground/30">
-                    <Upload className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Drop your files here or click to browse
-                    </p>
-                    <p className="text-xs text-muted-foreground/70">
-                      Supports: JPG, PNG, MP4, MOV (Max 50MB)
-                    </p>
-                    <Button variant="outline" className="mt-3">
-                      Choose Files
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Upload Progress */}
-                {isUploading && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span>Uploading campaign...</span>
-                      <span>{uploadProgress}%</span>
-                    </div>
-                    <Progress value={uploadProgress} className="h-2" />
-                  </div>
-                )}
+               
 
                 <div className="flex justify-end space-x-3">
                   <Button variant="outline" type="button">

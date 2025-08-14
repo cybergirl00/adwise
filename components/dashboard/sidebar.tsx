@@ -22,7 +22,7 @@ import {
   Inbox,
   Menu,
   X,
-  LogOut
+  LogOut, ImageIcon
 } from 'lucide-react';
 
 const navigationConfig = {
@@ -38,6 +38,7 @@ const navigationConfig = {
     { name: 'Wallet', href: '/dashboard/wallet', icon: Wallet },
     { name: 'Creators List', href: '/dashboard/creators', icon: Users },
     { name: 'Chat', href: '/dashboard/chat', icon: MessageCircle },
+    { name: 'Ad Gallery', href: '/dashboard/ad_gallery', icon: ImageIcon },
   ],
   creator: [
     { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
@@ -49,7 +50,8 @@ const navigationConfig = {
 
 export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { user, logout } = useAuth();
+  const { user, logout,  } = useAuth();
+  
   const pathname = usePathname();
 
   if (!user) return null;

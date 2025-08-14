@@ -5,6 +5,7 @@ import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ClerkProvider } from '@clerk/nextjs'
 import { OtpModal } from '@/components/auth/otpModal';
+import { Toaster } from '@/components/ui/sonner';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -32,6 +33,8 @@ export default function RootLayout({
           {children}
           <OtpModal />
         </AuthProvider>
+
+        <Toaster />
         </ThemeProvider>
       </body>
     </html>

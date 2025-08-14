@@ -119,3 +119,54 @@ export const roleGradients = {
   business: 'from-green-600 to-green-800',
   creator: 'from-purple-600 to-purple-800'
 };
+
+export const media = [
+  {
+    id: 1, 
+    title: 'Perfume Ad',
+    category: 'Ai',
+    dateCreated: '30th june 2025'
+  },
+   {
+    id: 2, 
+    title: 'Indomie Ad',
+    category: 'content_creator',
+    dateCreated: '30th may 2025',
+    creatorName: 'Dikko Rabiat',
+    creatorImage: 'https://images.unsplash.com/photo-1613005798967-632017e477c8?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  },
+   {
+    id: 3, 
+    title: 'Perfume Ad',
+    category: 'uploaded',
+    dateCreated: '30th june 2024'
+  },
+    {
+    id: 4, 
+    title: 'Indomie Ad',
+    category: 'content_creator',
+    dateCreated: '30th may 2025',
+    creatorName: 'Dikko Rabiat',
+    creatorImage: 'https://images.unsplash.com/photo-1586351012965-861624544334?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3Dhttps://images.unsplash.com/photo-1586351012965-861624544334?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  },
+   {
+    id: 5, 
+    title: 'Perfume Ad',
+    category: 'uploaded',
+    dateCreated: '30th june 2024'
+  },
+    {
+    id: 6, 
+    title: 'Indomie Ad',
+    category: 'content_creator',
+    dateCreated: '30th may 2025',
+    creatorName: 'Dikko Rabiat',
+    creatorImage: 'https://images.unsplash.com/photo-1613005798967-632017e477c8?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+  },
+   {
+    id: 7, 
+    title: 'Perfume Ad',
+    category: 'uploaded',
+    dateCreated: '30th june 2024'
+  },
+]

@@ -11,14 +11,14 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { user, isLoading } = useAuth();
-  const { isSignedIn, } = useClerk();
+  const { isSignedIn, loaded } = useClerk();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!isLoading && !isSignedIn) {
-      router.push('/auth');
-    }
-  }, [user, isLoading, router]);
+  // useEffect(() => {
+  //   if (!loaded && !isSignedIn) {
+  //     router.push('/auth');
+  //   }
+  // }, [user, isLoading, router, loaded]);
 
   if (isLoading) {
     return (
@@ -28,8 +28,8 @@ export default function DashboardLayout({
     );
   }
 
-  if (!user) {
-    return null;
+  if (loaded && !user) {
+   router.push('/auth');
   }
 
   return (

@@ -65,6 +65,7 @@ const formSchema = z.object({
 export default function UploadAdsPage() {
   const [adTitle, setAdTitle] = useState('');
   const [adDescription, setAdDescription] = useState('');
+  const [redirectUrl, setRedirectUrl] = useState('')
   const [adFormat, setAdFormat] = useState('');
   const [targetAudience, setTargetAudience] = useState('');
   const [category, setCategory] = useState('')
@@ -92,7 +93,8 @@ export default function UploadAdsPage() {
         mediaId: mediaId,
         budget: Number(budget),
         audience: targetAudience,
-        category
+        category,
+        redirectUrl
 
       });
 
@@ -163,6 +165,17 @@ export default function UploadAdsPage() {
                     placeholder="Enter campaign title"
                     value={adTitle}
                     onChange={(e) => setAdTitle(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="redirectUrl">Redirect Url</Label>
+                  <Input
+                    id="redirectUrl"
+                    placeholder="Enter  Redirect Url"
+                    value={redirectUrl}
+                    onChange={(e) => setRedirectUrl(e.target.value)}
                     required
                   />
                 </div>

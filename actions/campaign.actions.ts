@@ -1,6 +1,6 @@
 import axios  from 'axios'
 
-export const createCampaign = async ({clerkId, title, description, budget, format, audience, mediaId, category}: {
+export const createCampaign = async ({clerkId, title, description, budget, format, audience, mediaId, category, redirectUrl}: {
     clerkId: string;
     title: string;
     description: string;
@@ -8,11 +8,12 @@ export const createCampaign = async ({clerkId, title, description, budget, forma
     format: string;
     audience: string;
     mediaId: string;
-    category: string
+    category: string;
+    redirectUrl: string
 }) => {
     try {
         const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/api/v1/campaign/create`, {
-            clerkId, title, description, budget, format, audience, mediaId, category
+            clerkId, title, description, budget, format, audience, mediaId, category, redirectUrl
         });
 
         return response;

@@ -62,8 +62,8 @@ export default function Hero({ onRoleSelect }: HeroProps) {
             <span className="text-xl font-bold text-foreground">Adwise</span>
           </div>
           <div className="flex items-center space-x-4">
-            <Button variant="ghost">About</Button>
-            <Button variant="ghost">Contact</Button>
+            <Button variant="ghost" className='hidden lg:block'>About</Button>
+            <Button variant="ghost" className='hidden lg:block'>Contact</Button>
             <ThemeToggle />
 
             {isSignedIn ? (

@@ -4,6 +4,10 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
 import Sidebar from '@/components/dashboard/sidebar';
 import { useClerk } from '@clerk/nextjs';
+import { DashboardProvider } from '@/context/dashboard-context';
+import { adwise, AdwiseClientProvider } from 'adwisesdk'
+import { Button } from '@/components/ui/button';
+import { AdBanner } from 'adwisesdk';
 
 export default function DashboardLayout({
   children,
@@ -14,11 +18,25 @@ export default function DashboardLayout({
   const { isSignedIn, loaded } = useClerk();
   const router = useRouter();
 
+
   // useEffect(() => {
   //   if (!loaded && !isSignedIn) {
   //     router.push('/auth');
   //   }
   // }, [user, isLoading, router, loaded]);
+
+//   useEffect(() => {
+//   const initClient = async () => {
+//     const client = await adwise._init({
+//       apiKey: "ad_live_befd4e720_3efbff69d"
+//     });
+//     client.initiatePop();
+//   };
+
+//   initClient();
+// }, []);
+
+  
 
   if (isLoading) {
     return (
@@ -28,11 +46,13 @@ export default function DashboardLayout({
     );
   }
 
-  if (loaded && !user) {
-   router.push('/auth');
-  }
+  // if (loaded && !user) {
+  //  router.push('/auth');
+  // }
 
   return (
+    <DashboardProvider>
+      {/* <AdwiseClientProvider apiKey='ad_live_befd4e720_3efbff69d'> */}
     <div className="min-h-screen  flex">
       <Sidebar />
       <main className="flex-1 md:ml-0 ml-0">
@@ -41,5 +61,7 @@ export default function DashboardLayout({
         </div>
       </main>
     </div>
+{/* </AdwiseClientProvider> */}
+    </DashboardProvider>
   );
 }

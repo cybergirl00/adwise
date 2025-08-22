@@ -8,12 +8,14 @@ import { UploadButton } from '@/utils/uploadthing'
 
 interface UploadDropzoneProps {
   onClientUploadComplete?: (res: any[]) => void
-  onUploadError?: (error: any) => void
+  onUploadError?: (error: any) => void,
+  showPreview?: boolean
 }
 
 export const UploadDropzone: React.FC<UploadDropzoneProps> = ({
   onClientUploadComplete,
-  onUploadError
+  onUploadError,
+  showPreview
 }) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [fileType, setFileType] = useState<'image' | 'video' | null>(null)
@@ -24,7 +26,11 @@ export const UploadDropzone: React.FC<UploadDropzoneProps> = ({
     if (res && res.length > 0) {
       // Use ufsUrl instead of url
       const fileUrl = res[0].ufsUrl || res[0].url
-      setPreviewUrl(fileUrl)
+
+      if(showPreview) {
+        setPreviewUrl(fileUrl)
+      }
+      
       
       // Enhanced file type detection
       const url = fileUrl.toLowerCase()

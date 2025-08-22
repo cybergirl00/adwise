@@ -4,6 +4,8 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, UserRole } from '@/lib/types';
 import { useSignUp, useSignIn, useUser, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
+import { useUserStore } from '@/lib/zustand';
+import { getUserbyId } from '@/actions/users.actions';
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
@@ -21,11 +23,13 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-   const [user, setUser] = useState<User | null>(null);
+  //  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otpEmail, setOtpEmail] = useState('');
    const [tempUserData, setTempUserData] = useState<{ firstName: string; lastName: string; role: UserRole } | null>(null);
+
+     const { userdata: user, setUser } = useUserStore()
   
   const { signUp, isLoaded: isSignUpLoaded, setActive: setActiveSignUp } = useSignUp();
   const { signIn, isLoaded: isSignInLoaded, setActive: setActiveSignIn } = useSignIn();
@@ -37,23 +41,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 
 
- useEffect(() => {
-    if (clerkUser) {
-      const mappedUser: User = {
-        id: clerkUser.id,
-        email: clerkUser.primaryEmailAddress?.emailAddress || '',
-        firstName: clerkUser.firstName || '',
-        lastName: clerkUser.lastName || '',
-        role: (clerkUser.unsafeMetadata?.role as UserRole) || 'creator',
-        userType: clerkUser.unsafeMetadata?.userType as number || 0,
-        avatar: clerkUser.imageUrl || getDefaultAvatar((clerkUser.unsafeMetadata?.role as UserRole) || 'creator')
-      };
-      setUser(mappedUser);
-    } else {
-      setUser(null);
-    }
-    setIsLoading(false);
-  }, [clerkUser]);
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (clerkUser) {
+        try {
+          const response = await getUserbyId({ clerkId: clerkUser.id });
+          
+          if (response?.status === 200) {
+            const mappedUser: User = {
+              id: clerkUser.id,
+              email: clerkUser.primaryEmailAddress?.emailAddress || '',
+              firstName: clerkUser.firstName || '',
+              lastName: clerkUser.lastName || '',
+              role: (clerkUser.unsafeMetadata?.role as UserRole) || 'creator',
+              userType: clerkUser.unsafeMetadata?.userType as number || 0,
+              avatar: response.data.user.imageUrl || getDefaultAvatar((clerkUser.unsafeMetadata?.role as UserRole) || 'creator'),
+              clerkId: clerkUser.id,
+              balance: response.data.user.balance || 0,
+              specialties: response.data.user.specialties || [],
+              bio: response.data.user.bio,
+              portfolio: response.data.user.portfolio,
+              rate: response.data.user.rate,
+              profile: response.data.user.profile
+            };
+            setUser(mappedUser);
+          } else {
+            setUser(null);
+          }
+        } catch (error) {
+          console.error('Failed to load user data:', error);
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
+      setIsLoading(false);
+    };
+
+    loadUserData();
+  }, [clerkUser, setUser]);
 
   const getDefaultAvatar = (role: UserRole) => {
     return role === 'developer' 
@@ -154,6 +180,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (completeSignIn.status === 'complete') {
           await setActiveSignIn({ session: completeSignIn.createdSessionId });
           setShowOtpModal(false);
+
           router.push('/dashboard');
         }
       }

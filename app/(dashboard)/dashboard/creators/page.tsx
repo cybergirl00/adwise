@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,17 +9,41 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MOCK_CREATORS } from '@/lib/contants';
 import { Search, Star, MapPin, Filter } from 'lucide-react';
+import { toast } from 'sonner';
+import { getCreators } from '@/actions/users.actions';
+
+
 
 export default function CreatorsPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [creators] = useState(MOCK_CREATORS);
+  const [creators, setCreators] = useState<CreatorProps[]>([]);
 
   const filteredCreators = creators.filter(creator =>
-    creator.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    creator.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    creator.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     creator.specialties.some(specialty => 
       specialty.toLowerCase().includes(searchTerm.toLowerCase())
     )
   );
+
+  useEffect(() => {
+    const handleGetCreators = async () => {
+      try {
+        const response = await getCreators();
+
+        if(response?.status === 200) {
+          setCreators(response.data.creators);
+        } else {
+        toast.error(`Error occured `)
+        }
+      } catch (error) {
+        toast.error(`Error Occured `)
+      }
+    }
+
+    handleGetCreators();
+  }, [])
+  
 
   return (
     <div className="space-y-8">
@@ -51,19 +75,19 @@ export default function CreatorsPage() {
       {/* Creators Grid */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredCreators.map((creator) => (
-          <Card key={creator.id} className="group hover:shadow-lg transition-all duration-300">
+          <Card key={creator._id} className="group hover:shadow-lg transition-all duration-300">
             <CardHeader className="text-center pb-4">
               <Avatar className="h-20 w-20 mx-auto mb-4">
-                <AvatarImage src={creator.avatar} />
-                <AvatarFallback>{creator.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                <AvatarImage src={creator.imageUrl} />
+                <AvatarFallback>{creator.firstName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
               </Avatar>
               
-              <h3 className="text-xl font-semibold">{creator.name}</h3>
+              <h3 className="text-xl font-semibold">{creator.firstName} {creator?.lastName}</h3>
               
               <div className="flex items-center justify-center gap-1 text-yellow-500">
                 <Star className="h-4 w-4 fill-current" />
-                <span className="text-sm font-medium text-foreground">{creator.rating}</span>
-                <span className="text-sm text-muted-foreground">({creator.reviews.length} reviews)</span>
+                <span className="text-sm font-medium text-foreground">4.9</span>
+                <span className="text-sm text-muted-foreground">(1 reviews)</span>
               </div>
             </CardHeader>
             
@@ -87,7 +111,7 @@ export default function CreatorsPage() {
                 </div>
                 
                 <Button asChild>
-                  <Link href={`/dashboard/creators/${creator.id}`}>
+                  <Link href={`/dashboard/creators/${creator._id}`}>
                     View Details
                   </Link>
                 </Button>

@@ -32,7 +32,7 @@ const adFormats = [
   { id: 'banner', name: 'Banner Ad', description: '320x50 display banner' },
   { id: 'square', name: 'Square Ad', description: '250x250 social media format' },
   { id: 'video', name: 'Video Ad', description: '16:9 video format' },
-  { id: 'story', name: 'Story Ad', description: '9:16 vertical format' }
+  { id: 'story', name: 'Story Ad', description: '9:16 vertical format' },
 ];
 
 const targetAudiences = [
@@ -46,6 +46,19 @@ const targetAudiences = [
   'Tech Enthusiasts',
   'Others'
 ];
+
+const adCategories = [
+  'Food & Drink',
+  'Health & Fitness',
+  'Shopping',
+  'Entertainment',
+  'Travel',
+  'Education',
+  'Finance',
+  'Business',
+  'Social',
+  'Games'
+];
 const formSchema = z.object({
   username: z.string().min(2).max(50),
 })
@@ -54,6 +67,7 @@ export default function UploadAdsPage() {
   const [adDescription, setAdDescription] = useState('');
   const [adFormat, setAdFormat] = useState('');
   const [targetAudience, setTargetAudience] = useState('');
+  const [category, setCategory] = useState('')
   const [budget, setBudget] = useState('');
   const [useAI, setUseAI] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -67,6 +81,8 @@ export default function UploadAdsPage() {
     e.preventDefault();
     setIsUploading(true);
 
+    // console.log('This is the media id ',mediaId)
+
     try {
       const create = await createCampaign({
         title: adTitle,
@@ -75,7 +91,9 @@ export default function UploadAdsPage() {
         clerkId: user?.id ?? "",
         mediaId: mediaId,
         budget: Number(budget),
-        audience: targetAudience
+        audience: targetAudience,
+        category
+
       });
 
       if(create?.status === 201) {
@@ -196,6 +214,22 @@ export default function UploadAdsPage() {
                       </SelectContent>
                     </Select>
                   </div>
+
+                   <div className="space-y-2">
+                    <Label>Category</Label>
+                    <Select value={category} onValueChange={setCategory} required>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select audience" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {adCategories.map((category) => (
+                          <SelectItem key={category} value={category}>
+                            {category}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -218,7 +252,7 @@ export default function UploadAdsPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {medias && medias.map((media) => (
-                          <SelectItem key={media._id} value={media.title}>
+                          <SelectItem key={media?._id} value={media._id}>
                             <div>
                               <div className="font-medium">{media.title}</div>
                               <div className="text-xs text-muted-foreground">{media.description}</div>

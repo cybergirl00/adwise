@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,38 +8,98 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuth } from '@/context/auth-context';
 import { Camera, Plus, X, Save, Star } from 'lucide-react';
-import { useUser } from '@clerk/nextjs';
+import { updateProfile } from '@/actions/users.actions';
+import { toast } from 'sonner';
+import { UploadButton } from '@/utils/uploadthing';
+import { useUserStore } from '@/lib/zustand';
+import { useDashboard } from '@/context/dashboard-context';
+
+interface FormData {
+  bio: string;
+  rate: string;
+  specialties: string[];
+  imageUrl: string;
+}
 
 export default function ProfilePage() {
-  const { user } = useUser();
-  const fullName = user?.firstName + ' ' + user?.lastName
-  const [name, setName] = useState(fullName || '');
-  const [bio, setBio] = useState('Passionate content creator with 5+ years of experience in video production and storytelling.');
-  const [rate, setRate] = useState('25000');
-  const [specialties, setSpecialties] = useState(['Video Production', 'Animation', 'Brand Stories']);
+  const { userdata, setUser } = useUserStore();
+  const [formData, setFormData] = useState<FormData>({
+    bio: '',
+    rate: '',
+    specialties: [],
+    imageUrl: ''
+  });
   const [newSpecialty, setNewSpecialty] = useState('');
-  const [portfolio, setPortfolio] = useState([
-    'https://images.pexels.com/photos/7234292/pexels-photo-7234292.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop',
-    'https://images.pexels.com/photos/3585089/pexels-photo-3585089.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'
-  ]);
+  // const [portfolio] = useState([
+  //   'https://images.pexels.com/photos/7234292/pexels-photo-7234292.jpeg',
+  //   'https://images.pexels.com/photos/3585089/pexels-photo-3585089.jpeg'
+  // ]);
+
+  const { user  } = useDashboard()
+  const [saving, setSaving] = useState(false);
+
+  // Initialize form data from store
+  useEffect(() => {
+    if (userdata) {
+      setFormData({
+        bio: userdata.bio || 'Passionate content creator...',
+        rate: userdata.rate?.toString() || '25000',
+        specialties: userdata.specialties || ['Video Production', 'Animation', 'Brand Stories'],
+        imageUrl: userdata.avatar || ''
+      });
+    }
+  }, [userdata]);
 
   const addSpecialty = () => {
-    if (newSpecialty.trim() && !specialties.includes(newSpecialty.trim())) {
-      setSpecialties([...specialties, newSpecialty.trim()]);
+    if (newSpecialty.trim() && !formData.specialties.includes(newSpecialty.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        specialties: [...prev.specialties, newSpecialty.trim()]
+      }));
       setNewSpecialty('');
     }
   };
 
   const removeSpecialty = (specialty: string) => {
-    setSpecialties(specialties.filter(s => s !== specialty));
+    setFormData(prev => ({
+      ...prev,
+      specialties: prev.specialties.filter(s => s !== specialty)
+    }));
   };
 
-  const handleSave = () => {
-    // Save profile changes
-    console.log('Saving profile changes...');
+  const handleSave = async () => {
+    if (!userdata) return;
+    
+    setSaving(true);
+    try {
+      const save = await updateProfile({
+        rate: formData.rate,
+        bio: formData.bio,
+        specialties: formData.specialties,
+        imageUrl: formData.imageUrl,
+        clerkId: userdata.clerkId
+      });
+
+      if (save?.status === 200) {
+        setUser({
+          ...userdata,
+          ...formData,
+          rate: parseFloat(formData.rate) || 0
+        });
+        toast.success("Profile Updated");
+      } else {
+        toast.error("Profile could not be saved");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("An error occurred");
+    } finally {
+      setSaving(false);
+    }
   };
+
+  const fullName = `${userdata?.firstName || ''} ${userdata?.lastName || ''}`.trim();
 
   return (
     <div className="space-y-8">
@@ -60,16 +120,21 @@ export default function ProfilePage() {
               {/* Avatar Upload */}
               <div className="flex items-center space-x-6">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage src={user?.imageUrl} />
+                  <AvatarImage src={formData.imageUrl || userdata?.avatar} />
                   <AvatarFallback className="text-xl">
-                    {fullName?.split(' ').map(n => n[0]).join('')}
+                    {fullName.split(' ').map(n => n[0]).join('')}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <Button variant="outline" className="mb-2">
-                    <Camera className="h-4 w-4 mr-2" />
-                    Change Photo
-                  </Button>
+                  <UploadButton
+                    endpoint="imageUploader"
+                    onClientUploadComplete={(res) => {
+                      const fileUrl = res[0].url;
+                      setFormData(prev => ({ ...prev, imageUrl: fileUrl }));
+                      toast.success("Profile photo updated");
+                    }}
+                  
+                  />
                   <p className="text-sm text-muted-foreground">
                     Upload a professional photo to build trust with clients
                   </p>
@@ -81,8 +146,7 @@ export default function ProfilePage() {
                   <Label htmlFor="name">Full Name</Label>
                   <Input
                     id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    value={fullName}
                     disabled
                   />
                 </div>
@@ -91,8 +155,8 @@ export default function ProfilePage() {
                   <Input
                     id="rate"
                     type="number"
-                    value={rate}
-                    onChange={(e) => setRate(e.target.value)}
+                    value={formData.rate}
+                    onChange={(e) => setFormData(prev => ({ ...prev, rate: e.target.value }))}
                   />
                 </div>
               </div>
@@ -101,8 +165,8 @@ export default function ProfilePage() {
                 <Label htmlFor="bio">Bio</Label>
                 <Textarea
                   id="bio"
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
+                  value={formData.bio}
+                  onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
                   rows={4}
                   placeholder="Tell clients about your experience and what makes you unique..."
                 />
@@ -117,7 +181,7 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap gap-2">
-                {specialties.map((specialty, index) => (
+                {formData.specialties.map((specialty, index) => (
                   <Badge key={index} variant="secondary" className="flex items-center gap-1">
                     {specialty}
                     <button
@@ -151,7 +215,7 @@ export default function ProfilePage() {
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-2 gap-4 mb-4">
-                {portfolio.map((image, index) => (
+                {user && user?.portfolio.map((image, index) => (
                   <div key={index} className="relative group">
                     <div className="aspect-video rounded-lg overflow-hidden bg-muted">
                       <img
@@ -176,9 +240,9 @@ export default function ProfilePage() {
 
           {/* Save Button */}
           <div className="flex justify-end">
-            <Button onClick={handleSave}>
-              <Save className="h-4 w-4 mr-2" />
-              Save Changes
+            <Button disabled={saving} onClick={handleSave}>
+              {saving ? <Save className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+              {saving ? "Saving" : "Save"} Changes
             </Button>
           </div>
         </div>
@@ -192,13 +256,13 @@ export default function ProfilePage() {
             <CardContent className="space-y-4">
               <div className="text-center">
                 <Avatar className="h-20 w-20 mx-auto mb-4">
-                  <AvatarImage src={user?.imageUrl} />
+                  <AvatarImage src={formData.imageUrl || userdata?.avatar} />
                   <AvatarFallback className="text-xl">
-                    {name.split(' ').map(n => n[0]).join('')}
+                    {fullName.split(' ').map(n => n[0]).join('')}
                   </AvatarFallback>
                 </Avatar>
                 
-                <h3 className="text-xl font-semibold">{name}</h3>
+                <h3 className="text-xl font-semibold">{fullName}</h3>
                 
                 <div className="flex items-center justify-center gap-1 text-yellow-500 mt-2">
                   <Star className="h-4 w-4 fill-current" />
@@ -207,10 +271,10 @@ export default function ProfilePage() {
                 </div>
               </div>
               
-              <p className="text-muted-foreground text-sm leading-relaxed">{bio}</p>
+              <p className="text-muted-foreground text-sm leading-relaxed">{formData.bio}</p>
               
               <div className="flex flex-wrap gap-2">
-                {specialties.map((specialty, index) => (
+                {formData.specialties.map((specialty, index) => (
                   <Badge key={index} variant="secondary" className="text-xs">
                     {specialty}
                   </Badge>
@@ -220,7 +284,7 @@ export default function ProfilePage() {
               <div className="text-center pt-4 border-t">
                 <span className="text-sm text-muted-foreground">Starting from</span>
                 <p className="text-lg font-bold text-primary">
-                  ₦{parseInt(rate).toLocaleString()}
+                  ₦{parseInt(formData.rate).toLocaleString()}
                 </p>
               </div>
             </CardContent>

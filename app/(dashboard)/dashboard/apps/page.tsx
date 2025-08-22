@@ -10,7 +10,11 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { MOCK_APPS } from '@/lib/contants';
 import { App } from '@/lib/types';
-import { Plus, Code, Copy, Eye, DollarSign, TrendingUp, Calendar } from 'lucide-react';
+import { Plus, Code, Copy, Eye, DollarSign, TrendingUp, Calendar, Loader2 } from 'lucide-react';
+import { createApp } from '@/actions/app.actions';
+import { useDashboard } from '@/context/dashboard-context';
+import { toast } from 'sonner';
+
 
 const adCategories = [
   'Food & Drink',
@@ -25,47 +29,92 @@ const adCategories = [
   'Games'
 ];
 
+const targetAudiences = [
+  'Young Adults (18-25)',
+  'Adults (26-35)',
+  'Middle-aged (36-50)',
+  'Seniors (50+)',
+  'Students',
+  'Professionals',
+  'Parents',
+  'Tech Enthusiasts',
+  'Others'
+];
+
 export default function AppsPage() {
-  const [apps, setApps] = useState<App[]>(MOCK_APPS);
+
+  const { user } = useDashboard();
+  const initialApps: MyAppProps[] = user?.apps ? [...user.apps] : [];
+  const [apps, setApps] = useState(initialApps);
   const [showForm, setShowForm] = useState(false);
   const [appName, setAppName] = useState('');
   const [appCategory, setAppCategory] = useState('');
+  const [audience, setAudience] = useState('');
+  const [isLoading, setIsLoading] = useState(false)
 
-  const generateApiKey = () => {
-    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-    let result = 'ak_live_';
-    for (let i = 0; i < 20; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-  };
+  
 
-  const handleAddApp = () => {
+  const handleAddApp = async  () => {
     if (appName && appCategory) {
-      const newApp: App = {
-        id: Date.now().toString(),
-        name: appName,
-        category: appCategory,
-        apiKey: generateApiKey(),
-        earnings: 0,
-        clicks: 0,
-        createdAt: new Date().toISOString().split('T')[0]
-      };
-      
-      setApps([...apps, newApp]);
+
+      setIsLoading(true)
+
+      try {
+          const newApp = await createApp({
+      title: appName,
+      categoryName: appCategory,
+      audienceName: audience, 
+      clerkId: user?.clerkId ?? ""
+      });
+
+      if(newApp?.status === 201 ) {
+        setIsLoading(false)
+        toast.success(`${newApp.data.message}`)
+
+        const newapp: App = {
+          _id: newApp.data.data._id,
+          title: newApp.data.data.title,
+          category: {name: newApp.data.categoryName, _id: newApp?.data.data.categoryId},
+          apiKey: newApp.data.data.apiKey,
+          earnings: 0,
+          click: 0,
+          createdAt: new Date().toISOString().split('T')[0],
+          categoryId: newApp?.data.data.categoryId,
+          audienceId: newApp?.data.data.audienceId,
+          audience: {
+            name: "",
+            _id: ""
+          },
+          clerkId: user?.clerkId ?? "",
+          impression: 0,
+
+        }
+         setApps([...apps, newapp ]);
       setAppName('');
       setAppCategory('');
       setShowForm(false);
+      } else {
+        setIsLoading(false)
+        toast.error(`${newApp?.data.message}`)
+      }
+      } catch (error) {
+        toast.error("Error occured ")
+      }
+      
+     
     }
   };
 
   const copyApiKey = (apiKey: string) => {
     navigator.clipboard.writeText(apiKey);
     // You could add a toast notification here
+    toast.success('Api key copied!')
   };
 
+
+
   const totalEarnings = apps.reduce((sum, app) => sum + app.earnings, 0);
-  const totalClicks = apps.reduce((sum, app) => sum + app.clicks, 0);
+  const totalClicks = apps.reduce((sum, app) => sum + app.click, 0);
 
   return (
     <div className="space-y-8">
@@ -161,6 +210,22 @@ export default function AppsPage() {
                   </SelectContent>
                 </Select>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="audience">Target Audience</Label>
+                <Select value={audience} onValueChange={setAudience}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select target audience" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {targetAudiences.map((audience) => (
+                      <SelectItem key={audience} value={audience}>
+                        {audience}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
             <div className="flex justify-end space-x-2">
@@ -169,8 +234,9 @@ export default function AppsPage() {
               </Button>
               <Button
                 onClick={handleAddApp}
-                disabled={!appName || !appCategory}
+                disabled={!appName || !appCategory || isLoading}
               >
+                {isLoading && <Loader2 className='animate-spin' />}
                 Generate API Key
               </Button>
             </div>
@@ -181,18 +247,18 @@ export default function AppsPage() {
       {/* Apps List */}
       <div className="space-y-6">
         {apps.map((app) => (
-          <Card key={app.id} className="hover:shadow-md transition-shadow">
+          <Card key={app._id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-xl font-semibold">{app.name}</h3>
-                    <Badge variant="secondary">{app.category}</Badge>
+                    <h3 className="text-xl font-semibold">{app.title}</h3>
+                    <Badge variant="secondary">{app.category.name}</Badge>
                   </div>
                   
                   <div className="flex items-center gap-1 text-muted-foreground text-sm">
                     <Calendar className="h-4 w-4" />
-                    <span>Created on {new Date(app.createdAt).toLocaleDateString()}</span>
+                    {/* <span>Created on {new Date(app.createdAt).toLocaleDateString()}</span> */}
                   </div>
                 </div>
                 
@@ -203,7 +269,7 @@ export default function AppsPage() {
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Clicks</p>
-                    <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{app.clicks.toLocaleString()}</p>
+                    <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{app.click.toLocaleString()}</p>
                   </div>
                 </div>
               </div>

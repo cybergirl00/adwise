@@ -4,6 +4,7 @@ import { useAuth } from '@/context/auth-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import millify from "millify";
 import { 
   TrendingUp, 
   DollarSign, 
@@ -14,9 +15,12 @@ import {
   MessageCircle,
   Eye
 } from 'lucide-react';
+import { useDashboard } from '@/context/dashboard-context';
+
 
 export default function DashboardOverview() {
-  const { user } = useAuth();
+  const { user } = useDashboard();
+
 
   const getDashboardContent = () => {
     switch (user?.role) {
@@ -25,10 +29,10 @@ export default function DashboardOverview() {
           title: 'Developer Dashboard',
           subtitle: 'Monitor your app performance and earnings',
           stats: [
-            { name: 'Total Earnings', value: '₦125,000', icon: DollarSign, change: '+12%' },
-            { name: 'Active Apps', value: '3', icon: Code, change: '+1' },
-            { name: 'Total Clicks', value: '45,230', icon: Eye, change: '+8%' },
-            { name: 'Monthly Revenue', value: '₦38,000', icon: TrendingUp, change: '+15%' }
+            { name: 'Total Earnings', value: millify(user?.userData.totalEarnings), icon: DollarSign, change: '+12%' },
+            { name: 'Active Apps', value: user?.userData.activeApps, icon: Code, change: '+1' },
+            { name: 'Total Clicks', value: user?.userData.totalClicks, icon: Eye, change: '+8%' },
+            { name: 'Monthly Revenue', value: millify(user?.userData.monthlyRevenue), icon: TrendingUp, change: '+15%' }
           ],
           actions: [
             { title: 'Add New App', description: 'Start monetizing a new application', href: '/dashboard/apps' },
@@ -42,9 +46,9 @@ export default function DashboardOverview() {
           subtitle: 'Manage your campaigns and connect with creators',
           stats: [
             { name: 'Active Campaigns', value: '5', icon: Activity, change: '+2' },
-            { name: 'Total Spend', value: '₦450,000', icon: DollarSign, change: '+25%' },
-            { name: 'Creators Hired', value: '12', icon: Users, change: '+4' },
-            { name: 'Campaign Reach', value: '125K', icon: TrendingUp, change: '+18%' }
+            { name: 'Total Spend', value: millify(user.userData.totalSpent), icon: DollarSign, change: '+25%' },
+            { name: 'Creators Hired', value: user?.userData.creatorsHired, icon: Users, change: '+4' },
+            { name: 'Campaign Reach', value: `${user?.userData.campaignsReached}`, icon: TrendingUp, change: '+18%' }
           ],
           actions: [
             { title: 'Upload New Ad', description: 'Create a new advertising campaign', href: '/dashboard/upload-ads' },
@@ -57,15 +61,21 @@ export default function DashboardOverview() {
           title: 'Creator Dashboard',
           subtitle: 'Track your projects and connect with businesses',
           stats: [
-            { name: 'Total Earnings', value: '₦85,000', icon: DollarSign, change: '+20%' },
-            { name: 'Active Projects', value: '3', icon: Activity, change: '+1' },
+            { name: 'Total Earnings', value: millify(user?.userData.totalEarnings), icon: DollarSign, change: '+20%' },
+            { name: 'Active Projects', value: user?.userData.activeProjects, icon: Activity, change: '+1' },
             { name: 'Client Reviews', value: '4.8/5', icon: Users, change: '+0.2' },
-            { name: 'Messages', value: '8', icon: MessageCircle, change: '+3' }
+            { name: 'Messages', value: user?.userData.messages, icon: MessageCircle, change: '+3' }
           ],
-          actions: [
+          actions: 
+          user?.userData.profile === 1 ? 
+          ([
             { title: 'Update Profile', description: 'Showcase your latest work and skills', href: '/dashboard/profile' },
             { title: 'View Requests', description: 'Check new collaboration opportunities', href: '/dashboard/requests' },
-          ]
+          ]) : (
+            [
+                { title: 'Complete your  Profile', description: 'Showcase your latest work and skills', href: '/dashboard/profile' },
+            ]
+          )
         };
 
       default:
@@ -78,6 +88,7 @@ export default function DashboardOverview() {
 
   return (
     <div className="space-y-8">
+
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">{content.title}</h1>
@@ -128,6 +139,7 @@ export default function DashboardOverview() {
           ))}
         </div>
       </div>
+             
 
       {/* Recent Activity */}
       <Card>
@@ -136,62 +148,19 @@ export default function DashboardOverview() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {user?.role === 'developer' && (
-              <>
-                <div className="flex items-center space-x-4 p-3 hover:bg-muted/50 rounded-lg transition-colors">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+            { user?.userData?.transactions?.length > 0 ? user?.userData.transactions.map((tx) => (
+               <div className="flex items-center space-x-4 p-3 hover:bg-muted/50 rounded-lg transition-colors">
+                  <div className={`w-2 h-2 ${tx.type === 1 ? ' bg-green-500 ' : 'bg-red-500'} rounded-full`}></div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium">Recipe App earned ₦2,500</p>
+                    <p className="text-sm font-medium">{tx.desc}</p>
                     <p className="text-xs text-muted-foreground">2 hours ago</p>
                   </div>
                 </div>
-                <div className="flex items-center space-x-4 p-3 hover:bg-muted/50 rounded-lg transition-colors">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">New API key generated for Fitness Tracker</p>
-                    <p className="text-xs text-muted-foreground">1 day ago</p>
-                  </div>
-                </div>
-              </>
-            )}
-            
-            {user?.role === 'business' && (
-              <>
-                <div className="flex items-center space-x-4 p-3 hover:bg-muted/50 rounded-lg transition-colors">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Adebayo Williams accepted your project</p>
-                    <p className="text-xs text-muted-foreground">3 hours ago</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-4 p-3 hover:bg-muted/50 rounded-lg transition-colors">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Campaign "Summer Collection" reached 10K views</p>
-                    <p className="text-xs text-muted-foreground">1 day ago</p>
-                  </div>
-                </div>
-              </>
-            )}
-
-            {user?.role === 'creator' && (
-              <>
-                <div className="flex items-center space-x-4 p-3 hover:bg-muted/50 rounded-lg transition-colors">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">Payment received: ₦25,000</p>
-                    <p className="text-xs text-muted-foreground">1 hour ago</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-4 p-3 hover:bg-muted/50 rounded-lg transition-colors">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">New collaboration request from TechCorp</p>
-                    <p className="text-xs text-muted-foreground">4 hours ago</p>
-                  </div>
-                </div>
-              </>
-            )}
+            )): (
+              <div className="">
+                <p className="text-sm text-center text-muted-foreground">You do not have any transactions</p>
+              </div>
+            )}  
           </div>
         </CardContent>
       </Card>

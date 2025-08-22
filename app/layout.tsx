@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { ClerkProvider } from '@clerk/nextjs'
 import { OtpModal } from '@/components/auth/otpModal';
 import { Toaster } from '@/components/ui/sonner';
+import { SocketProvider } from '@/context/socket-context';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -21,6 +22,7 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider>
+      <SocketProvider>
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider
@@ -38,6 +40,7 @@ export default function RootLayout({
         </ThemeProvider>
       </body>
     </html>
+    </SocketProvider>
     </ClerkProvider>
   );
 }
